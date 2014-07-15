@@ -1,3 +1,3 @@
 phoronix-bot
 =================
-Send phoronix news to Weibo automatically.
+Send Phoronix news to Weibo automatically.
