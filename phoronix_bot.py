@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+
+# phoronix-bot -- Send Phoronix news to Weibo automatically
+# Copyright (C) 2014 Tom Li.
+# License: AGPL v3 or later.
+
+
 import rpweibo
 from utils import tweetlen
 
