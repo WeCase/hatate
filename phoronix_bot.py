@@ -35,16 +35,6 @@ DEBUG = 1
 global_stop_event = threading.Event()
 
 
-# monkey patch
-def interruptable_get(self):
-    while True:
-        try:
-            return self.get(False, timeout=3600)
-        except queue.Empty:
-            pass
-queue.Queue.interruptable_get = interruptable_get
-
-
 class Weibo():
 
     SINA_URL_RE = re.compile(r"(http://t.cn/[a-zA-Z0-9]{5,7})")
@@ -54,7 +44,9 @@ class Weibo():
         self.authenticator = None
 
         self._weibo_queue = queue.Queue()
-        threading.Thread(target=self._sender).start()
+        sender = threading.Thread(target=self._sender)
+        sender.daemon = True
+        sender.start()
 
     def auth(self):
         self.weibo.auth(self.authenticator)
@@ -119,7 +111,7 @@ class Weibo():
 
     def _sender(self):
         while not global_stop_event.is_set():
-            news = self._weibo_queue.interruptable_get()
+            news = self._weibo_queue.get(block=True)
             text = Weibo._generate_tweet("%s - %s" % (news.title, news.description),
                                          news.link)
             success = self._send(text)
