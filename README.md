@@ -1,3 +1,3 @@
-phoronix-bot
+hatate
 =================
-Send Phoronix news to Weibo automatically.
+A general program sends news to Weibo automatically.
