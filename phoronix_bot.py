@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
-# phoronix-bot -- Send Phoronix news to Weibo automatically
+# hatate -- A general program sends news to Weibo automatically.
 # Copyright (C) 2014 Tom Li.
 # License: AGPL v3 or later.
 
@@ -26,7 +26,8 @@ REDIRECT_URL = "https://api.weibo.com/oauth2/default.html"
 USERNAME = ""
 PASSWORD = ""
 
-PHORONIX_RSS = "http://www.phoronix.com/rss.php"
+WEB_RSS = "http://www.phoronix.com/rss.php"
+WEB_BASEURL = "http://www.phoronix.com/vr.php?"
 
 # send to stdout instead of Weibo
 DEBUG = 1
@@ -86,7 +87,7 @@ class Weibo():
         for url_chunk in short_urls_chunks:
             original_urls = self.weibo.get("short_url/expand", url_short=url_chunk)["urls"]
             for url in original_urls:
-                if "http://www.phoronix.com/vr.php?" not in url["url_long"]:
+                if WEB_BASEURL not in url["url_long"]:
                     continue
                 original_urls_list.append(url["url_long"])
 
@@ -149,15 +150,23 @@ class News():
             self.title = title
             self.link = link
             self.description = description
-            self.guid = guid
+            self._guid = guid
             self._status = status
 
     def load_from_xml(self, xml):
             self.title = xml.find("title").text
             self.link = xml.find("link").text
             self.description = xml.find("description").text
-            self.guid = xml.find("guid").text
+            self._guid = xml.find("guid").text
             self._status = self.NEW
+
+    @property
+    def guid(self):
+        # GUID is optional in RSS, if it doesn't exist, use link instead.
+        if self._guid:
+            return self._guid
+        else:
+            return self.link
 
     @property
     def status(self):
@@ -185,7 +194,7 @@ class News():
             return True
 
 
-class Phoronix():
+class Website():
 
     def __init__(self):
         self._news = []
@@ -251,7 +260,7 @@ class Phoronix():
         news_list = []
         while 1:
             try:
-                rss_resource = urllib.request.urlopen(PHORONIX_RSS)
+                rss_resource = urllib.request.urlopen(WEB_RSS)
                 news_list_raw = list(ElementTree(file=rss_resource).iter("item"))
                 break
             except Exception:
@@ -284,16 +293,16 @@ def main():
 
     sent_guid = weibo.get_news_guid()
 
-    phoronix = Phoronix()
-    for news in phoronix.news():
+    website = Website()
+    for news in website.news():
         if news.guid in sent_guid:
             news.status = News.SENT
 
     while 1:
-        phoronix.update()
+        website.update()
 
         need_to_send_news = []
-        for news in phoronix.news():
+        for news in website.news():
             if news.status == News.SENT:
                 continue
             need_to_send_news.append(news)
